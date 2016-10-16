@@ -14,6 +14,7 @@ class Quote(Base):
     id = Column(Integer, primary_key=True)
     price = Column(Float)
     time = Column(DateTime)
+    ticker = Column(String)
 
     def __repr__(self):
         return "Time recorded: " + datetime.strftime(self.time, "%H:%M - %a %d %b - %Y") + " Price: " + str(self.price)
@@ -23,8 +24,12 @@ class Trade(Base):
     id = Column(Integer, primary_key=True)
     time = Column(DateTime)
     closed = Column(Boolean, default=False)
+    ticker = Column(String)
     enter_price = Column(Float)
     exit_price = Column(Float, nullable=True)
-    profit_loss = Column(Float, nullable=True)
+    profit_loss = Column(Float, default=0)
+
+    def __repr__(self):
+        return "Entered: {}".format(time)
 
 Base.metadata.create_all(engine, checkfirst=True)

@@ -2,6 +2,8 @@ import math
 import json
 import csv
 
+from queue_class import QueuingClass
+from cacus_algo import settings
 from models import Session, Quote
 from sqlalchemy import desc
 from datetime import datetime, timedelta
@@ -12,8 +14,8 @@ class Analyzer(object):
     golden_cross = None
     enough_data = False
 
-    def __init__(self, executor):
-        self.executor = executor
+    def __init__(self, portfolio):
+        self.portfolio = portfolio
 
     class BollingerBands(object):
         upper_band = None
@@ -40,13 +42,9 @@ class Analyzer(object):
 
     def get_last_price(self):
         session = Session()
-        return session.query(Quote.price).first()
-
-    def notify(self):
-        last_50_prices = self.get_n_last_prices(50)
-        if len(last_50_prices) >= 50:
-            self.enough_data = True
-        self.generate_signal()
+        price = session.query(Quote.price).first()[0]
+        print(price)
+        return price
 
     def smooth_average(self, l, alpha):
         if not l:
@@ -88,30 +86,32 @@ class Analyzer(object):
 
         return RSI
 
-    def generate_signal(self):
-        if not self.enough_data:
-            return
-
-        current_price = self.get_last_price()
-        last_20_prices = self.get_n_last_prices(20)
-        last_14_prices = self.get_n_last_prices(14)
-        last_15_prices = self.get_n_last_prices(15)
-        last_50_prices = self.get_n_last_prices(50)
+    def generate_signal(self, quote):
+        current_price = quote.price
+        last_20_prices = self.get_n_last_prices(21)[1:]
+        last_14_prices = self.get_n_last_prices(15)[1:]
+        last_15_prices = self.get_n_last_prices(16)[1:]
+        last_50_prices = self.get_n_last_prices(51)[1:]
 
         RSI = self.calculate_RSI(last_14_prices)
         bollinger_bands = self.BollingerBands(last_20_prices)
         golden_cross = self.golden_cross(last_50_prices, last_15_prices)
-        signal = None
+        print("Current price: " + str(current_price))
+        print("RSI: " + str(RSI))
+        print("Bollinger bands upper: " + str(bollinger_bands.upper_band))
+        print("Bollinger bands lower: " + str(bollinger_bands.lower_band))
+        print("Golden cross: " + str(golden_cross))
+        signal = "STAND ASIDE"
 
         if RSI > 70 and current_price > bollinger_bands.upper_band and golden_cross:
             signal = "SELL"
         elif RSI < 70 and current_price < bollinger_bands.lower_band and golden_cross:
             signal = "BUY"
 
-        #if signal is not None:
-        signal = "BUY"
-        print(signal)
-        self.executor.signal(signal, current_price)
+        print("Advice: " + str(signal))
+        print("\n")
+
+        return signal
 
     def golden_cross(self, long_run_prices, short_run_prices):
         long_run_avg = (sum(long_run_prices)*1.0)/len(long_run_prices)

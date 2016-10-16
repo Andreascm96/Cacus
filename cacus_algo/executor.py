@@ -1,4 +1,5 @@
 from portfolio import Portfolio
+from queue_class import QueuingClass
 
 class Executor(object):
 
@@ -17,3 +18,6 @@ class Executor(object):
             self.portfolio.open_position(current_price)
         elif signal == "SELL":
             print("Selling")
+
+    def get_portfolio(self):
+        return self.portfolio
